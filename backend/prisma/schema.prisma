@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  walletAddress String        @unique
+  role          Role          @default(STUDENT)
+  createdAt     DateTime      @default(now())
+  credentials   Credential[]
+  rewards       Reward[]
+}
+
+enum Role {
+  STUDENT
+  INSTITUTION
+  DONOR
+  ADMIN
+}
+
+model Credential {
+  id          String   @id @default(cuid())
+  hash        String   @unique
+  contractId  String
+  studentAddr String
+  institution String
+  courseHash  String
+  issuedAt    DateTime @default(now())
+  revokedAt   DateTime?
+  user        User     @relation(fields: [studentAddr], references: [walletAddress])
+}
+
+model Reward {
+  id          String   @id @default(cuid())
+  studentAddr String
+  points      Int
+  txHash      String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [studentAddr], references: [walletAddress])
+}
+
+model ScholarshipFund {
+  id          String   @id @default(cuid())
+  contractId  String
+  donor       String
+  amountXlm   Float
+  remaining   Float
+  createdAt   DateTime @default(now())
+  disbursements Disbursement[]
+}
+
+model Disbursement {
+  id        String          @id @default(cuid())
+  fundId    String
+  student   String
+  amount    Float
+  txHash    String
+  createdAt DateTime        @default(now())
+  fund      ScholarshipFund @relation(fields: [fundId], references: [id])
+}
